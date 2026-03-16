@@ -1,0 +1,9 @@
+*.wav
+*.mp3
+prerequisites.md
+
+oldref/
+__pycache__/
+venv/
+dumps.py
+
