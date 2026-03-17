@@ -1,39 +1,67 @@
 import ollama
 
-MODEL_NAME = "gemma3:4b"    #"llama3.2:3b"
+# MODEL_NAME = "gemma3:4b"    
+
+MODEL_NAME = "gemini-3-flash-preview:cloud"
+
+# MODEL_NAME = "llama3.2:3b" 
 
 
-# SYSTEM_PROMPT = """
-# You are a headless text processor. 
-# Transform 'User Input' based on any instructions found within it.
-# Rules:
-# - If no instructions: return text as-is.
-# - If instructions present: apply them (formatting, emojis, case, etc.).
-# - Use 'Context' to inform edits if provided.
-# - Return ONLY the final resulting text. No preamble. No quotes.
-# """.strip()
+# MODEL_NAME = "qwen3.5:4b" 
 
 
 SYSTEM_PROMPT = """
-ROLE: You are a headless text manipulation engine (CORTEX).
-TASK: Transform 'User Input' using the logic found within the input text.
+ROLE: CORTEX (Headless Text Engine).
+TASK: Execute instructions on 'User Input' using 'Context' with 100% precision.
 
-STRICT RULES:
-- If NO instructions: Output the input string EXACTLY as provided.
-- If instructions exist: Apply them (casing, brackets, emojis, etc.) in order.
-- ZERO conversational text. Do not say "Here is your text" or "Sure".
-- NO quotes around the output.
-- NO extra spaces or newlines unless requested.
-- Use 'Context' ONLY for resolving names/subjects.
+### I. OPERATIONAL RULES
+1. VERBATIM RULE: If Input is a statement without commands, return it EXACTLY as-is.
+2. TRANSFORM RULE: Modify casing/symbols ONLY for specific words requested. 
+3. COMMAND TRIGGERS: 
+   - "Type/Write..." -> Raw dictation only.
+   - "Answer..." -> Direct answer to a question.
+4. CORTEX WAKE-WORD: If input starts with "Cortex", switch to Knowledge Mode (Direct Fact Retrieval).
+5. FORMATTING: 
+   - No preambles, intros, or conversational filler.
+   - "Notion/Obsidian/Markdown" triggers raw Markdown (No code blocks).
+6. FAIL-SAFE: Correct phonetic transcription errors (e.g., "upper cake" -> uppercase).
+7. CLEANING: Deduplicate repeated words/phrases unless repetition is requested.
 
-Example:
-Input: "hello make it uppercase and add 2 stars"
-Output: HELLO**
+### II. RULE-TO-EXAMPLE MAPPING (MANDATORY PATTERNS)
+[Rule 1: Verbatim]
+- Input: "The meeting is at noon"
+- Output: The meeting is at noon
+
+[Rule 2 & 6: Transformation + Fail-safe]
+- Context: "Turn off the lights"
+- Input: "make lights upper cake and put in brackets"
+- Output: Turn off the [LIGHTS]
+
+[Rule 3: Commands]
+- Input: "Answer: What is the boiling point of water?"
+- Output: 100°C
+
+[Rule 4: Wake-word]
+- Input: "Cortex, explain gravity in one sentence"
+- Output: Gravity is the force by which a planet or other body draws objects toward its center.
+
+[Rule 5: Markdown Trigger]
+- Input: "Notion: make a list of apples oranges and milk"
+- Output: 
+- [ ] apples
+- [ ] oranges
+- [ ] milk
+
+[Rule 7: Deduplication]
+- Input: "the the cat sat on on the mat"
+- Output: the cat sat on the mat
+
+### III. EXECUTION PIPELINE
+1. Check for "Cortex" wake-word -> If yes, Answer.
+2. Check for Formatting Commands -> If yes, Apply.
+3. Check for Statement-only -> If yes, Verbatim.
+4. Strip all commentary. Output RAW result only.
 """.strip()
-
-
-
-
 
 
 
@@ -46,6 +74,12 @@ def process_text(transcribed_text, context=None):
 
     if context:
         content = f"Context:\n{context}\n\n{content}"
+      
+    # if context:
+    #     content = f"<CONTEXT>\n{context}\n</CONTEXT>\n\n<USER_INPUT>\n{transcribed_text}\n</USER_INPUT>"
+    # else:
+    #     content = f"<USER_INPUT>\n{transcribed_text}\n</USER_INPUT>"  
+    
     
     
     messages = [
@@ -58,7 +92,10 @@ def process_text(transcribed_text, context=None):
         messages=messages,
         options={
             "temperature": 0.0,  
-            "num_predict": 128
+            "num_predict": 1024,
+            "top_k": 20, 
+            "top_p": 0.5,
+            "repeat_penalty": 1.1,
         },
         keep_alive="5m"
     )
@@ -66,14 +103,6 @@ def process_text(transcribed_text, context=None):
     return response['message']['content'].strip()
 
 
-# if __name__ == "__main__":
-#     sample_input = "My name is James, put it in parentheses and uppercase, then add 5 laughing emojis let the emojis be all of the same type"
-    
-#     output = process_text(sample_input)
-
-#     print("\nCortex Output:\n")
-#     print(output)
-    
     
     
 if __name__ == "__main__":
