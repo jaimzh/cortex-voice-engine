@@ -4,23 +4,24 @@ from playsound3 import playsound
 from whisper import transcribe
 from recorder import stop_recording_stream, start_recording_stream
 from actions import handle_action
-
+from cortex import process_text 
 import time
 import pyautogui
 import pyperclip
 
 is_recording = False
 is_actions_mode = False
+is_cortex_mode = False
 stream = None
 
 
 def start_recording(e):
-    global is_recording, stream, is_actions_mode
+    global is_recording, stream, is_actions_mode, is_cortex_mode
 
     if not is_recording:
         is_recording = True
         is_actions_mode = keyboard.is_pressed("shift")
-
+        is_cortex_mode = keyboard.is_pressed("ctrl")
         playsound("siri.mp3", block=False)
         print(f"Recording: {'actionss' if is_actions_mode else 'Dictation'}")
 
@@ -43,12 +44,25 @@ def stop_recording(e):
         text = transcribe(audio_data)
 
         print("Transcribed Text:", text)
+        
+        print()
+  
+        
 
         if is_actions_mode == True:
             handle_action(text)
+        elif is_actions_mode: 
+            final_text = process_text(text)     
+            print("Cortex Output:", final_text)
+            
+            pyperclip.copy(final_text + " ")
+            pyautogui.hotkey("ctrl", "v")
+
         else:
+            
             pyperclip.copy(text + " ")
             pyautogui.hotkey("ctrl", "v")
+            
 
 
 if __name__ == "__main__":
