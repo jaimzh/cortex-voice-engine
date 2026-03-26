@@ -44,7 +44,7 @@ def start_recording(e):
         is_actions_mode = keyboard.is_pressed("shift")
         is_cortex_mode = keyboard.is_pressed("ctrl")
 
-        playsound("siri.mp3", block=False)
+        playsound("sounds/siri.mp3", block=False)
         
         if is_actions_mode:
             mode_name = "Actions"
