@@ -17,12 +17,18 @@ stream = None
 
 
 
-def get_selected_text():
-   
+def get_selected_text(): 
+    keyboard.release("alt")
+    keyboard.release("ctrl")
+    keyboard.release("shift")
+    
+    pyperclip.copy("")
+    time.sleep(0.05)
+
     pyautogui.hotkey("ctrl", "c")
 
-    for _ in range(5):
-        time.sleep(0.1)
+    for _ in range(10):
+        time.sleep(0.05)
         selected_text = pyperclip.paste()
         if selected_text:
             break
@@ -32,8 +38,33 @@ def get_selected_text():
     return selected_text
 
 
+THINKING_PLACEHOLDER = "(●'◡'●)thinking..."
 
 
+def handle_text_intelligence():
+    
+    selected = get_selected_text()
+    if not selected.strip():
+        print("[Text Intelligence] No text selected, aborting.")
+        return
+
+    print(f"[Text Intelligence] Input: {selected}")
+
+    pyperclip.copy(THINKING_PLACEHOLDER)
+    pyautogui.hotkey("ctrl", "v")
+    time.sleep(0.05)  
+
+    
+    result = process_text(selected)
+    print(f"[Text Intelligence] Output: {result}")
+
+    # for now, just slow selection by character 
+    for _ in range(len(THINKING_PLACEHOLDER)):
+        pyautogui.hotkey("shift", "left")
+        
+    
+    pyperclip.copy(result)
+    pyautogui.hotkey("ctrl", "v")
 
 
 def start_recording(e):
@@ -92,12 +123,17 @@ def stop_recording(e):
 
 
 if __name__ == "__main__":
-    print("hey")
-    print("Hold caps lock to record")
-    print("Press ESC to quit")
+    print("Cortex is running")
+    print("  CapsLock          → Dictation (hold to record)")
+    print("  Shift+CapsLock    → Actions mode")
+    print("  Ctrl+CapsLock     → Cortex voice + context")
+    print("  Alt+`             → Text Intelligence (select text first)")
+    print("  ESC               → Quit")
 
     keyboard.on_press_key("caps lock", start_recording)
     keyboard.on_release_key("caps lock", stop_recording)
+
+    keyboard.add_hotkey("alt+`", handle_text_intelligence)
 
     while True:
         if keyboard.is_pressed("esc"):
