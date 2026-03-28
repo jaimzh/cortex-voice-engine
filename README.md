@@ -15,8 +15,8 @@ Execute system-level commands with your voice. Open websites, search Google, or 
 ### Cortex (Caps Lock + Ctrl)
 The core feature of the system. Highlight text on your screen and tell Cortex how to transform it. It uses an LLM to bridge the gap between your selection and your intent.
 
-### Text Intelligence (Alt + `)
-A shortcut for instant text processing without voice recording. Highlight any text and press Alt + ` to have Cortex automatically answer a question, summarize content, or transform the selection based on its current state. It provides real-time feedback by showing a thinking placeholder before replacing the text with the AI result.
+### Text Intelligence (Ctrl + Alt)
+A shortcut for instant text processing without voice recording. Highlight any text and press Ctrl + Alt to have Cortex automatically answer a question, summarize content, or transform the selection based on its current state. It provides real-time feedback by showing a thinking placeholder before replacing the text with the AI result.
 
 #### Example Command Patterns:
 - **Transformation:** Highlight "hello world" and say "make this uppercase" -> **HELLO WORLD**
@@ -42,7 +42,7 @@ You hold **Caps Lock + Ctrl** and say: "make login page upper cake and wrap in b
 Imagine you have this highlighted in your editor:
 > "What is the Big O complexity of binary search?"
 
-You press **Alt + `** (no voice needed).
+You press **Ctrl + Alt** (no voice needed).
 
 **Cortex Output:**
 > "O(log n)"
@@ -77,7 +77,7 @@ Place a `siri.mp3` file in the `sounds/` directory to hear a chime when you star
 | Caps Lock (Hold) | Dictation | Transcribe speech to text |
 | Caps Lock + Shift | Actions | Run voice commands |
 | Caps Lock + Ctrl | Cortex | Process selected text with context |
-| Alt + ` | Text Intelligence | Instant AI answer or transformation |
+| Ctrl + Alt | Text Intelligence | Instant AI answer or transformation |
 | Esc | Exit | Stop the application |
 
 ---

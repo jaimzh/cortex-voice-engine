@@ -18,24 +18,30 @@ stream = None
 
 
 def get_selected_text(): 
-    keyboard.release("alt")
-    keyboard.release("ctrl")
-    keyboard.release("shift")
-    
+    for key in ["alt", "ctrl", "shift"]:
+        keyboard.release(key)
+    time.sleep(0.1)  
+
     pyperclip.copy("")
-    time.sleep(0.05)
+    time.sleep(0.1)
 
+    # Attempt to copy (basic Ctrl+C)
     pyautogui.hotkey("ctrl", "c")
-
-    for _ in range(10):
-        time.sleep(0.05)
+    for _ in range(15):
+        time.sleep(0.1)
         selected_text = pyperclip.paste()
         if selected_text:
-            break
-    else:
-        selected_text = "" 
+            return selected_text
 
-    return selected_text
+    # Backup Attempt (Ctrl+Insert is the alternative copy shortcut, this works in terminals and some other apps)
+    pyautogui.hotkey("ctrl", "insert")
+    for _ in range(10):
+        time.sleep(0.1)
+        selected_text = pyperclip.paste()
+        if selected_text:
+            return selected_text
+
+    return ""
 
 
 THINKING_PLACEHOLDER = "(●'◡'●)thinking..."
@@ -53,6 +59,8 @@ def handle_text_intelligence():
     pyperclip.copy(THINKING_PLACEHOLDER)
     pyautogui.hotkey("ctrl", "v")
     time.sleep(0.05)  
+    
+    
 
     
     result = process_text(selected)
@@ -123,17 +131,17 @@ def stop_recording(e):
 
 
 if __name__ == "__main__":
-    print("Cortex is running")
+    print("Cortex is running (●'ω'●)")
     print("  CapsLock          → Dictation (hold to record)")
     print("  Shift+CapsLock    → Actions mode")
     print("  Ctrl+CapsLock     → Cortex voice + context")
-    print("  Alt+`             → Text Intelligence (select text first)")
+    print("  Ctrl+Alt          → Text Intelligence (select text first)")
     print("  ESC               → Quit")
 
     keyboard.on_press_key("caps lock", start_recording)
     keyboard.on_release_key("caps lock", stop_recording)
 
-    keyboard.add_hotkey("alt+`", handle_text_intelligence)
+    keyboard.add_hotkey("ctrl+alt", handle_text_intelligence)
 
     while True:
         if keyboard.is_pressed("esc"):
