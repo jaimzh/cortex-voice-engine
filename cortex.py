@@ -3,11 +3,10 @@ import ollama
 # MODEL_NAME = "gemma3:4b"
 
 MODEL_NAME = "gemini-3-flash-preview:cloud"
+FALLBACK_MODEL = "gemma3:4b"
 
 # MODEL_NAME = "llama3.2:3b"
 
-
-# MODEL_NAME = "qwen3.5:4b"
 
 
 SYSTEM_PROMPT = """
@@ -91,8 +90,9 @@ def process_text(transcribed_text, context=None):
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": content},
     ]
-
-    response = ollama.chat(
+    
+    try: 
+        response = ollama.chat(
         model=MODEL_NAME,
         messages=messages,
         options={
@@ -105,7 +105,30 @@ def process_text(transcribed_text, context=None):
         keep_alive="5m",
     )
 
-    return response["message"]["content"].strip()
+        return response["message"]["content"].strip() 
+    except Exception as e:
+        print(f"[CORTEX] Cloud model failed, falling back to local model...{e}")
+        
+        try:
+            response = ollama.chat(
+                model=FALLBACK_MODEL,
+                messages=messages,
+                options={
+                    "temperature": 0.0,
+                    "num_predict": 1024,
+                    "top_k": 20,
+                    "top_p": 0.5,
+                    "repeat_penalty": 1.1,
+                },
+                keep_alive="5m",
+            )
+            return response["message"]["content"].strip()
+        
+        except Exception as fallback_error:
+            print(f"[CORTEX] Fallback also failed: {fallback_error}")
+            return transcribed_text 
+
+    
 
 
 if __name__ == "__main__":
