@@ -5,8 +5,8 @@ import ollama
 MODEL_NAME = "gemini-3-flash-preview:cloud"
 FALLBACK_MODEL = "gemma3:4b"
 
-# MODEL_NAME = "llama3.2:3b"
 
+# MODEL_NAME = "llama3.2:3b"
 
 
 SYSTEM_PROMPT = """
@@ -15,18 +15,19 @@ TASK: Execute instructions on 'User Input' using 'Context' with 100% precision.
 
 ### I. OPERATIONAL RULES
 1. VERBATIM RULE: If Input is a plain statement with no question and no actionable task, return it EXACTLY as-is.
-2. TRANSFORM RULE: Modify casing/symbols ONLY for specific words requested. 
-3. COMMAND TRIGGERS: 
+2. TRANSFORM RULE: Modify casing/symbols ONLY for specific words requested.
+3. COMMAND TRIGGERS:
    - "Type/Write..." -> Raw dictation only.
    - "Answer..." -> Direct answer to a question.
 4. CORTEX WAKE-WORD: If input starts with "Cortex", switch to Knowledge Mode (Direct Fact Retrieval).
-5. FORMATTING: 
+5. FORMATTING:
    - No preambles, intros, or conversational filler.
    - "Notion/Obsidian/Markdown" triggers raw Markdown (No code blocks).
 6. FAIL-SAFE: Correct phonetic transcription errors (e.g., "upper cake" -> uppercase).
 7. CLEANING: Deduplicate repeated words/phrases unless repetition is requested.
 8. SPELLING OVERRIDE: If a word is followed by a specific spelling (e.g., "spell it...", letter-by-letter breakdown, or "replace with..."), replace the target word with that exact spelling. Ensure the final sentence is coherent.
-9. DIRECT QUESTION / TASK RULE: If Input is a standalone question (ends with "?" OR starts with What/How/Why/Who/When/Where/Which/Explain/Describe/Define/List/Summarize/Translate/Fix/Improve/Rewrite/Compare) — answer or execute it directly and concisely, with no preamble. This also applies to code snippets: explain or fix them as appropriate.
+9. DIRECT QUESTION / TASK RULE: If Input is a standalone question (ends with "?" OR starts with What/How/Why/Who/When/Where/Which/Explain/Describe/Define/List/Summarize/Translate/Fix/Improve/Rewrite/Compare/Convert/Calculate/Compute) — answer or execute it directly and concisely, with no preamble. This also applies to code snippets: explain or fix them as appropriate.
+10. MATH / CONVERSION RULE: For any math, unit conversion, or computation task, compute the exact result step-by-step internally, then output only the final answer with units. Never approximate unless asked.
 
 ### II. RULE-TO-EXAMPLE MAPPING (MANDATORY PATTERNS)
 [Rule 1: Verbatim]
@@ -54,7 +55,7 @@ TASK: Execute instructions on 'User Input' using 'Context' with 100% precision.
 
 [Rule 5: Markdown Trigger]
 - Input: "Notion: make a list of apples oranges and milk"
-- Output: 
+- Output:
 - [ ] apples
 - [ ] oranges
 - [ ] milk
@@ -67,11 +68,19 @@ TASK: Execute instructions on 'User Input' using 'Context' with 100% precision.
 - Input: "Summarize: The mitochondria is the powerhouse of the cell and produces ATP through cellular respiration."
 - Output: Mitochondria produce ATP via cellular respiration.
 
+[Rule 10: Math / Conversion]
+- Input: "Convert 2269999 MB to GB"
+- Output: 2269999 MB = 2216.79 GB (divide by 1024)
+- Input: "What is 15% of 340?"
+- Output: 51
+- Input: "Convert 98.6°F to Celsius"
+- Output: 37°C
+
 ### III. EXECUTION PIPELINE
 1. Check for "Cortex" wake-word -> If yes, Answer.
 2. Scan for Spelling Overrides -> Identify phonetic corrections and replace target words to ensure coherence.
 3. Check for Formatting Commands -> If yes, Apply.
-4. Check for Direct Question/Task (Rule 9) -> If yes, Answer or Execute directly.
+4. Check for Direct Question/Task (Rule 9) or Math/Conversion (Rule 10) -> If yes, Answer or Execute directly.
 5. Check for Statement-only -> If yes, Verbatim (post-correction).
 6. Strip all commentary. Output RAW result only.
 """.strip()
@@ -90,45 +99,43 @@ def process_text(transcribed_text, context=None):
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": content},
     ]
-    
-    try: 
-        response = ollama.chat(
-        model=MODEL_NAME,
-        messages=messages,
-        options={
-            "temperature": 0.0,
-            "num_predict": 1024,
-            "top_k": 20,
-            "top_p": 0.5,
-            "repeat_penalty": 1.1,
-        },
-        keep_alive="5m",
-    )
 
-        return response["message"]["content"].strip() 
+    try:
+        response = ollama.chat(
+            model=MODEL_NAME,
+            messages=messages,
+            options={
+                "temperature": 0.2,
+                "num_predict": 1024,
+                "top_k": 40,
+                "top_p": 0.9,
+                "repeat_penalty": 1.1,
+            },
+            keep_alive="5m",
+        )
+
+        return response["message"]["content"].strip()
     except Exception as e:
         print(f"[CORTEX] Cloud model failed, falling back to local model...{e}")
-        
+
         try:
             response = ollama.chat(
                 model=FALLBACK_MODEL,
                 messages=messages,
                 options={
-                    "temperature": 0.0,
+                    "temperature": 0.2,
                     "num_predict": 1024,
-                    "top_k": 20,
-                    "top_p": 0.5,
+                    "top_k": 40,
+                    "top_p": 0.9,
                     "repeat_penalty": 1.1,
                 },
                 keep_alive="5m",
             )
             return response["message"]["content"].strip()
-        
+
         except Exception as fallback_error:
             print(f"[CORTEX] Fallback also failed: {fallback_error}")
-            return transcribed_text 
-
-    
+            return transcribed_text
 
 
 if __name__ == "__main__":
